@@ -22,24 +22,18 @@ category.get("/category", async (c) => {
 });
 
 // Create a new category
-category.post(
-	"/category",
-	Auth,
-	//Rolerequire(["admin", "seller"])
-	isAdmin,
-	async (c: any) => {
-		const body = await c.req.parseBody();
-		const { name, slug } = body;
-		if (!name || !slug) {
-			return c.json({ message: "missing category" }, 400);
-		}
-		try {
-			await sql.insert(categories).values({ name, slug });
-			return c.json({ success: true });
-		} catch (err) {
-			console.error(err);
-			return c.json({ error: "Failed to create category" }, 500);
-		}
-	},
-);
+category.post("/category", Auth, isAdmin, async (c: any) => {
+	const body = await c.req.parseBody();
+	const { name, slug } = body;
+	if (!name || !slug) {
+		return c.json({ message: "missing category" }, 400);
+	}
+	try {
+		await sql.insert(categories).values({ name, slug });
+		return c.json({ success: true });
+	} catch (err) {
+		console.error(err);
+		return c.json({ error: "Failed to create category" }, 500);
+	}
+});
 export default category;
