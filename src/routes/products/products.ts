@@ -1,5 +1,5 @@
 import { zValidator } from "@hono/zod-validator";
-import { and, count, desc, eq, like, or } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, like, lte, or } from "drizzle-orm";
 import { Hono } from "hono";
 import { getCookie } from "hono/cookie";
 import { jwt } from "hono/jwt";
@@ -36,6 +36,10 @@ product.get("/getproduct", Auth, async (c) => {
 	const ownerFromQuery = c.req.query("owner");
 	const published = c.req.query("published");
 
+	const minPrice = Number(c.req.query("minPrice"));
+	const maxPrice = Number(c.req.query("maxPrice"));
+	const sort = c.req.query("sort") ?? "newest";
+
 	const page = Number(c.req.query("page"));
 	const limit = Number(c.req.query("limit"));
 	const offset = (page - 1) * limit;
@@ -62,6 +66,26 @@ product.get("/getproduct", Auth, async (c) => {
 			});
 		}
 		cond.push(eq(products.categoryName, categoryId));
+	}
+
+	if (!isNaN(minPrice)) {
+		cond.push(gte(products.price, minPrice.toString()));
+	}
+	if (!isNaN(maxPrice)) {
+		cond.push(lte(products.price, maxPrice.toString()));
+	}
+
+	//sorting
+	let orderBy: any;
+	switch (sort) {
+		case "price_asc":
+			orderBy = asc(products.price);
+			break;
+		case "price_desc":
+			orderBy = desc(products.price);
+			break;
+		default:
+			orderBy = desc(products.createdAt);
 	}
 
 	//Search functionality
@@ -106,7 +130,7 @@ product.get("/getproduct", Auth, async (c) => {
 		.select()
 		.from(products)
 		.where(whereCondition)
-		.orderBy(desc(products.createdAt))
+		.orderBy(orderBy)
 		.limit(limit)
 		.offset(offset);
 
